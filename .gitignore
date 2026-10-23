@@ -1,0 +1,21 @@
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.ipynb_checkpoints/
+.DS_Store
+
+# Large / generated artefacts (regenerate with the training scripts)
+models/*
+!models/.gitkeep
+dataset/*
+!dataset/.gitkeep
+results/*
+!results/.gitkeep
+*.db
+
+# real-world photos are private; keep folder structure only
+real_world/*/*
+!real_world/*/.gitkeep
+real_world/.evaluation_log.csv

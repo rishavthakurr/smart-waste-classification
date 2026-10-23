@@ -1,0 +1,6 @@
+# For Google Colab: TensorFlow/Keras/NumPy/pandas/matplotlib are preinstalled; install only the rest.
+plotly>=5.24
+opencv-python-headless>=4.10
+PyYAML>=6.0
+streamlit>=1.50
+pytest>=8.0

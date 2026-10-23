@@ -1,0 +1,89 @@
+# Central configuration. Every script and page reads this file (via src/utils.py).
+project:
+  title: "Smart Waste Classification and Intelligent Segregation System"
+
+# Class order defines the model output index. Do NOT reorder after training.
+classes: [plastic, paper, cardboard, glass, metal, general_waste]
+
+dataset:
+  # TrashNet (Thung & Yang, 2016), MIT license. Original label -> project class.
+  download_url: "https://github.com/garythung/trashnet/raw/master/data/dataset-resized.zip"
+  raw_dir: dataset/raw
+  prepared_dir: dataset
+  label_map:
+    plastic: plastic
+    paper: paper
+    cardboard: cardboard
+    glass: glass
+    metal: metal
+    trash: general_waste        # documented mapping: TrashNet "trash" = mixed/non-recyclable
+  allowed_extensions: [".jpg", ".jpeg", ".png"]
+  split: {train: 0.70, validation: 0.15, test: 0.15}
+  min_images_per_class: 20              # preparation aborts if a project class has fewer usable source images
+  # Near-duplicate = 16x16 RGB thumbnails whose mean absolute pixel difference (0-255) is <= this value.
+  # Chosen by inspecting TrashNet pairs: <=4.5 were the same object re-photographed, >=5 were different items.
+  # (An 8x8 dHash was tried first and rejected: mostly false positives on flat white backgrounds.)
+  near_duplicate_thumb_mad: 4.5
+
+image:
+  height: 224
+  width: 224
+  min_side: 32            # reject uploads smaller than this
+  max_side: 8000          # reject uploads larger than this
+  max_upload_mb: 10
+
+training:
+  seed: 42
+  batch_size: 32
+  epochs: 25
+  learning_rate: 0.001
+  dropout: 0.3
+  early_stopping_patience: 6
+  reduce_lr_patience: 3
+  reduce_lr_factor: 0.5
+  min_lr: 0.000001
+  use_class_weights: true
+  photometric_augmentation: false   # brightness/contrast/saturation jitter on training images only (CLI: --photometric-aug)
+  fine_tune:                     # transfer-learning models only
+    enabled: true
+    epochs: 10
+    learning_rate: 0.00001
+    unfreeze_last_layers: 30
+  smoke:                         # tiny run to verify the pipeline, NOT for reporting results
+    epochs: 2
+    fine_tune_epochs: 1
+    image_size: 96
+    batch_size: 16
+    max_train_per_class: 30
+
+models:
+  cnn:
+    display_name: "Custom CNN"
+    file: models/custom_cnn.keras
+    preprocessing: rescale_01
+    transfer: false
+  mobilenetv2:
+    display_name: "MobileNetV2"
+    file: models/mobilenetv2.keras
+    preprocessing: mobilenet_v2
+    transfer: true
+    weights_path: models/pretrained/mobilenet_v2_notop.h5   # optional offline copy (official Keras no-top weights)
+  resnet50:
+    display_name: "ResNet50"
+    file: models/resnet50.keras
+    preprocessing: resnet50
+    transfer: true
+    weights_path: models/pretrained/resnet50_notop.h5       # optional offline copy (official Keras no-top weights)
+
+# "auto" = model recommended by evaluate_models.py (results/recommended_model.json)
+deployment_model: auto
+
+paths:
+  models_dir: models
+  results_dir: results
+  database: results/classification_history.db
+
+ui:
+  confidence_decimals: 1
+  low_confidence_threshold: 0.60   # below this, a prediction is flagged "Low confidence"
+  store_uploaded_images: false     # privacy: images are never written to disk by default
